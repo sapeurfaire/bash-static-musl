@@ -1,37 +1,52 @@
-# bash-static
+# bash-static-musl
 
-Because we all need the most static bash we can get in this world.
+Downloads source and compiles Bash with static linking to the Musl standard C library.  
 
-## Getting
+Clone the repo:
 
-Download from the Releases section or run `./build.sh`.
+``` 
+git clone https://github.com/sapeurfaire/bash-static-musl.git
+```
+Run the build:
 
-Note that you really can't have truly static binaries on Darwin or
-Windows machines, because there are no static libraries that can be used.
-But this will ensure that Darwin or Windows bash binaries will not rely on
-anything else but their libcs.
-
-On Linux, we use musl instead of glibc to avoid `dlopen()`.
-
-## Rationale
-
-This started as an experiment in Jan 2015 when Glider Labs was testing the
-viability of potentially using just a statically linked bash entrypoint
-as the only entrance into a container. So the following works:
-
-```sh
-FROM scratch
-ADD bash
-ENTRYPOINT ['/bash']
+```
+build.sh [TARGET_OS] [TARGET_ARCH] [VERSION_TAG] 
 ```
 
-Adding in busybox would make the container relatively feature-complete
-for debugging or just for common tools. This works great with a
-container image that has busybox (i.e `progrium/busybox`).
+Parameters are optional for a build that targets:
+- the build host
+- the most recent version of Bash
 
-If you're not going for purely static minimalism, you can achieve a similar
-result just by using Alpine today, also discovered during this experiment in 2015.
+To cross-compile, supply the target os and architecture:
 
-## License
+``` 
+bash-static-musl/build.sh linux x86_64 
+```
 
-MIT
+To build for a prior version, supply a tag matching one of the 'version-[TAG].sh' files:
+
+```
+bash-static-musl/build.sh macos x86_64 42 
+```
+
+To change patch level for Bash or specify a different Musl, supply a spec file.  Use one of the existing 'version-[TAG].sh' files as a template.  Update the softlink to point to your custom spec, and run the build:
+
+```
+cd bash-static-musl
+cp version-53.sh my_spec_file.sh
+sed -i.bak 's/bash_patch_level=9/bash_patch_level=8/' my_spec_file.sh
+ln -fs my_spec_file.sh version.sh
+./build.sh macos x86_64 
+```
+The resulting executable will be in the ***releases*** subdirectory.
+
+## Credit/Attribution:
+
+Forked from [robxu9/bash-static](https://github.com/robxu9/bash-static)
+
+The [original](https://github.com/robxu9/bash-static/blob/master/README.md) noted (summarizing; see the original for full text):
+
+- Use of Musl avoids glibc dlopen() on linux
+- Bash will use Mac/Win libc as they do not support static binaries
+- Script resulted from containerization project
+
