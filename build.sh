@@ -24,8 +24,23 @@
 # For Linux, also builds musl for truly static linking if
 # musl is not installed.
 
-set -euo pipefail
+set -eo pipefail
 shopt -s nullglob
+
+usage () {
+  latest=$(basename --suffix .sh $(readlink version.sh))
+  bv=${latest##version-}
+  cat << __USAGE
+
+  $(basename ${0}) [OS] [ARCH] [TAG]
+
+  Where:
+  OS   -- defaults to $(uname -s)
+  ARCH -- defaults to $(uname -m)
+  TAG  -- defaults to ${bv}
+
+__USAGE
+}
 
 # Silence these
 pushd() { command pushd "$@" >/dev/null; }
@@ -43,10 +58,11 @@ mycurl() {
 }
 
 main() {
-  [[ ${1:-} ]] || { echo "! no target specified" >&2 && exit 1; }
-  [[ ${2:-} ]] || { echo "! no arch specified" >&2 && exit 1; }
+  [[ ${1} = '-h' || ${1} = '--help' ]] && usage && exit
 
-  declare -r target=${1} arch=${2} tag=${3:-}
+  myT=$(uname -s) && dO=${myT@L} && declare -r target=${1:-$dO}
+  myA=$(uname -m) && dA=${myA@L} && declare -r arch=${2:-$dA}
+  declare -r tag=${3:-}
   declare -r bash_mirror='https://ftp.gnu.org/gnu/bash'
   declare -r musl_mirror='https://musl.libc.org/releases'
 
